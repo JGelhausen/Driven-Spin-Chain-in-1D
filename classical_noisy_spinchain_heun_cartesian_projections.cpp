@@ -1,11 +1,6 @@
 /**************************************************************
-*
 *	MAIN PROGRAM FOR A CLASSICAL SPIN CHAIN WITH NOISE
-*	Jan Gelhausen
-*	2018/16/08
-*
-*	Structure:
-
+*	Jan Gelhausen - 2018
 **************************************************************/
 
 #define _USE_MATH_DEFINES
@@ -52,7 +47,7 @@ int glob_maxit=0;
 // forward declaration of functions - list of all functions
 void HeunMethod(double** spins, double* drift, double* driftpredict, double* noisevector, double* noisepredict,double noise, double h, int t, int L);
 void EulerMaruyamaPredictor(double** spins, double* driftvector,double* noisevector ,double h, double noise, int t, int L);
-void CalcDriftVector(double* driftvector, double* noisevector,double** Jakobi, double** spins,double h, int t, int N, int L, double J, double DeltaJ, double omegad, double lambda, double var, double noise,double* SpinChainNoise, double staggered, double J2, int cossin, double phi,double J3);
+void CalcDriftVector(double* driftvector, double* noisevector,double** Jakobi, double** spins,double h, int t, int N, int L, double J, double DeltaJ, double omegad, double lambda, double var, double noise,double* SpinChainNoise, double staggered, double J2, int cossin, double phi);
 void Projecttoconservedmanifolds(double** spins, int t, int N, double staggered);
 void randomize_mat_contents(gsl_matrix *matrix, int size);
 void print_mat_contents(gsl_matrix *matrix, int size);
@@ -60,7 +55,6 @@ gsl_matrix *invert_a_matrix(gsl_matrix *matrix);
 void print_mat_contents(gsl_matrix *matrix);
 void randomize_mat_contents(gsl_matrix *matrix);
 void PrintMatrix(double **Matrix, int L);
-void cross(double** A, double** B, double* result, int t);
 int mod(int jn, int N);
 int pos(int j, int alpha, int N);
 int myrandom (int i);
@@ -107,12 +101,10 @@ int main (int argc, char * argv[]) {
 
 //////////////////////////////////////////////////////////////
 
-
-    /* Create 4 Random number generators */
+    /* Create Random number generator */
     gsl_rng * r1 = NULL;
     r1 = gsl_rng_alloc (rng_type);
     gsl_rng_set (r1, gsl_ran_gaussian(r,1.00));
-
 
 /**************************************************************
 *
@@ -122,19 +114,15 @@ int main (int argc, char * argv[]) {
 int N=4;
 int arraysize=1;
 int L=3*N;
-int Heun=1;
 double h=0.0001;
 double spinnorm=1.0;
 int count=1;
 double staggered=0.3;
 int cossin=2;
-
-//double randomspin=1.0;
-int init=0; // Initialisation method for 4 spins - 3 choices high mid and low energys
-
+int Heun=1;
+int init=0;
 double J=1.0;
 double J2=0.4;
-double J3=0.0;
 double DeltaJ=0.0*0.1;
 double omegad=.5;
 double lambda=.1;
@@ -143,7 +131,6 @@ double T=0.1;
 double var=2.0*lambda*T*h;
 double noise=0.0;
 double phi=0.0;
-
 
 /**************************************************************
 *
@@ -167,8 +154,7 @@ if (argc==16){
     J2=atof(argv[12]);
 		cossin=atoi(argv[13]);
     phi=atof(argv[14]);
-		J3=atof(argv[15]);
-    printf("obtained parameters from the comand line:Heun=%i \t arraysize=%i \t h=%.6lf \t J=%.3lf \t DeltaJ=%.3lf \t lambda=%.3lf\t noise=%.1lf \t T=%.3lf \t init=%i \t var=%.8lf \t N=%i \t stag=%.3lf \t J2=%.3lf \t cossin=%i \t phi=%.3lf \t J3=%.2lf\n",Heun,arraysize,h,J,DeltaJ,lambda,noise,T,init,var,N,staggered,J2,cossin,phi,J3);
+    printf("obtained parameters from the comand line:Heun=%i \t arraysize=%i \t h=%.6lf \t J=%.3lf \t DeltaJ=%.3lf \t lambda=%.3lf\t noise=%.1lf \t T=%.3lf \t init=%i \t var=%.8lf \t N=%i \t stag=%.3lf \t J2=%.3lf \t cossin=%i \t phi=%.3lf \n",Heun,arraysize,h,J,DeltaJ,lambda,noise,T,init,var,N,staggered,J2,cossin,phi);
 }
 
 //Initialise arrays
@@ -212,94 +198,8 @@ for(int j=0;j<N;j++){
 
 }
 
-// Method 2: Fixed 3 Spins Mathematica
-// spins[0][0]=-0.26003598640313524;
-// spins[1][0]=0.2299273631369978;
-// spins[2][0]=-0.9378244470348465;
-
-// spins[3][0]=-0.15455776669168048;
-// spins[4][0]=0.15512134220913928;
-// spins[5][0]=0.975730119421613;
-
-// spins[6][0]=-0.004509859175503844;
-// spins[7][0]=0.9868012330718272;
-// spins[8][0]=0.16187336895900592;
-
-// Method 4: Fixed 4 Spins in Mathematica - high energy initial state
-if(init==1){
-spins[0][0]=0.7041375785011809;
-spins[1][0]=-0.5884316611154805;
-spins[2][0]=-0.39741470876072227;
-
-spins[3][0]=0.16208162324743838;
-spins[4][0]=-0.8266397113868539;
-spins[5][0]=-0.538884342845229;
-
-spins[6][0]=0.22796183645785126;
-spins[7][0]=-0.4318033848999162;
-spins[8][0]=0.8726850737280538;
-
-spins[9][0]=0.3648447733797488;
-spins[10][0]=0.15802671790924555;
-spins[11][0]=-0.9175597243582084;
-}
-// Method 3: Fixed 4 Spins Mathematica - middle avg energy
-if(init==2){
-spins[0][0]=0.443187;
-spins[1][0]=0.224638;
-spins[2][0]=-0.867827;
-
-spins[3][0]=-0.320116;
-spins[4][0]=-0.319811;
-spins[5][0]=0.891766;
-
-spins[6][0]=-0.953837;
-spins[7][0]=0.277324;
-spins[8][0]=-0.115264;
-
-spins[9][0]=0.409046;
-spins[10][0]=-0.837323;
-spins[11][0]=0.362729;
-}
-// Method Close to Neel Spins - 4 - low energy state
-if(init==3){
-spins[0][0]=0.263446;
-spins[1][0]=0.0;
-spins[2][0]=-0.964674;
-
-spins[3][0]=0.198669;
-spins[4][0]=0.0;
-spins[5][0]=0.980067;
-
-spins[6][0]=-0.194263;
-spins[7][0]=0.177948;
-spins[8][0]=-0.964674;
-
-spins[9][0]=-0.146498;
-spins[10][0]=0.134194;
-spins[11][0]=0.980067;
-}
-if(init==7){
-// Method 3: Fixed 10 Spins Mathematica
-spins[0][0]=0.16937547836897207; spins[3][0]=-0.32439973344124073; spins[6][0]=-0.5164239633485075;
-spins[1][0]=0.2219778625639837;   spins[4][0]=-0.3043864268704564; spins[7][0]=-0.40273874094081713;
-spins[2][0]=0.9602279811892627;  spins[5][0]=-0.8956080147476843; spins[8][0]=-0.7557167436446177;
-
-spins[9][0]=-0.24886099257158803; spins[12][0]=0.24886099257158814; spins[15][0]=0.3781116369578457;
-spins[10][0]=-0.02679017538355607;   spins[13][0]=0.026790175383556058; spins[16][0]=0.3274844933093515;
-spins[11][0]=-0.9681686283283518;  spins[14][0]=0.9681686283283518; spins[17][0]=0.8659015513549884;
-
-spins[18][0]=0.5164239633485073; spins[21][0]=0.32439973344124046; spins[24][0]=-0.16937547836897204;
-spins[19][0]=0.4027387409408172;   spins[22][0]=0.3043864268704563; spins[25][0]=-0.22197786256398383;
-spins[20][0]=0.7557167436446178;  spins[23][0]=0.8956080147476844; spins[26][0]=-0.9602279811892627;
-
-spins[27][0]=-0.37811163695784566;
-spins[28][0]=-0.3274844933093513;
-spins[29][0]=-0.8659015513549885;
-}
-
 if(init==8){
-// Method 3: Fixed 20 Spins Mathematica
+// Method 3: Fixed 20 Spins, allows comparison with Mathematica
 
 spins[0][0]=0.007961012813583968; spins[3][0]=-0.5743810753980985; spins[6][0]=0.28533635890833375;
 spins[1][0]=0.0009672038459881919;   spins[4][0]=-0.2554959435547057; spins[7][0]=0.03219546294016889;
@@ -328,17 +228,7 @@ spins[47][0]=0.9587685710140998;  spins[50][0]=-0.9999678428788109; spins[53][0]
 spins[54][0]=-0.5554168908316552; spins[57][0]=-0.014323112720636338; ;
 spins[55][0]=-0.21612981337583853;   spins[58][0]=-0.01167676883254349; ;
 spins[56][0]=-0.8029943842574632;  spins[59][0]=-0.9998292361756698;
-
-
 }
-
-
-// for(int j=0;j<N;j++){
-// spinnorm=1.0/sqrt(spins[pos(j,0,N)][0]*spins[pos(j,0,N)][0]+spins[pos(j,1,N)][0]*spins[pos(j,1,N)][0]+spins[pos(j,2,N)][0]*spins[pos(j,2,N)][0]);
-// spins[pos(j,0,N)][0]*=spinnorm;
-// spins[pos(j,1,N)][0]*=spinnorm;
-// spins[pos(j,2,N)][0]*=spinnorm;
-// }
 
 //Zero Magnetisation state
 if(init==4){
@@ -390,123 +280,46 @@ spins[pos(shuffledit,0,N)][0]=sin(phi)*cos(theta);
 spins[pos(shuffledit,1,N)][0]=sin(theta)*sin(phi);
 spins[pos(shuffledit,2,N)][0]=cos(phi);
 
-//printf("pos:%i\t x:%.3lf\n",j,spins[pos(j,0,N)][0]);
-
-// alpha=alpha+0.2;
-// beta=beta+0.3;
 alpha=gsl_ran_gaussian (r1,1.00);
 beta=gsl_ran_gaussian (r1,1.00);
-//alpha=1.67441;
-//beta=0.73364;
 printf("alpha:%.5lf\t beta:%.5lf\n",alpha,beta);
 
 }
 }
 
-
-// /**************************************************************
-// *	Euler
-// **************************************************************/
-if(Heun==0){
- for(int t=0;t<arraysize-1;t++){
-
-   // Draw the noise for the current timestep
-    //  SpinChainNoise[0]=gsl_ran_gaussian (r1,sqrt(var));
-    //  SpinChainNoise[1]=gsl_ran_gaussian (r2,sqrt(var));
-    //  SpinChainNoise[2]=gsl_ran_gaussian (r3,sqrt(var));
-    //  SpinChainNoise[3]=gsl_ran_gaussian (r4,sqrt(var));
-
-     for(int k=0;k<N;k++){
-       SpinChainNoise[k]=gsl_ran_gaussian (r,sqrt(var));
-     }
-
-
-// Step 1 Calculate the drift F(u_n) - modifies the arrays driftvector and noisevector
-    CalcDriftVector(driftvector, noisevector, Jakobi, spins, h, t, N, L, J, DeltaJ, omegad, lambda, var, noise, SpinChainNoise,staggered,J2,cossin,phi,J3);
-
-// Step 2 Predict the next step based on Euler ut_n+1=F(u_n)*h+dW*noisevector; ut_n+1, according to Euler Maruyama, actually modifies spins[t+1]
-    EulerMaruyamaPredictor(spins,driftvector,noisevector,h,noise,t,L);
-// Step 2.5 Projection Method: Normalise all spins, ensures that solution evolves on surface of sphere
-       // for(int j=0;j<N;j++){
-       // spinnorm=1.0/sqrt(spins[pos(j,0,N)][t+1]*spins[pos(j,0,N)][t+1]+spins[pos(j,1,N)][t+1]*spins[pos(j,1,N)][t+1]+spins[pos(j,2,N)][t+1]*spins[pos(j,2,N)][t+1]);
-       // spins[pos(j,0,N)][t+1]*=spinnorm;
-       // spins[pos(j,1,N)][t+1]*=spinnorm;
-       // spins[pos(j,2,N)][t+1]*=spinnorm;
-       // }
-
-         if(t%100000==0){
-             double percentage=100.0*double(t)/double(arraysize);
-             printf("%.3lf percent through\n",percentage);
-
-         }
-         Projecttoconservedmanifolds(spins,t,N,staggered);
-    }
-}
-else{
 // /**************************************************************
 // *	Heun
 // **************************************************************/
  for(int t=0;t<arraysize-1;t++){
-
-   // Draw the noise for the current timestep
-    //  SpinChainNoise[0]=gsl_ran_gaussian (r1,sqrt(var));
-    //  SpinChainNoise[1]=gsl_ran_gaussian (r2,sqrt(var));
-    //  SpinChainNoise[2]=gsl_ran_gaussian (r3,sqrt(var));
-    //  SpinChainNoise[3]=gsl_ran_gaussian (r4,sqrt(var));
-
+	 	// For every timestep draw a new noise realisation for every spin
      for(int k=0;k<N;k++){
        SpinChainNoise[k]=gsl_ran_gaussian (r,sqrt(var));
      }
 
-
 // Step 1 Calculate the drift F(u_n) - modifies the arrays driftvector and noisevector
-    CalcDriftVector(driftvector, noisevector, Jakobi, spins, h, t, N, L, J, DeltaJ, omegad, lambda, var, noise, SpinChainNoise,staggered,J2,cossin,phi,J3);
-
+    CalcDriftVector(driftvector, noisevector, Jakobi, spins, h, t, N, L, J, DeltaJ, omegad, lambda, var, noise, SpinChainNoise,staggered,J2,cossin,phi);
 // Step 2 Predict the next step based on Euler ut_n+1=F(u_n)*h+dW*noisevector; ut_n+1, according to Euler Maruyama, actually modifies spins[t+1]
     EulerMaruyamaPredictor(spins,driftvector,noisevector,h,noise,t,L);
-// Step 2.5 Projection Method: Normalise all spins, ensures that solution evolves on surface of sphere
-       // for(int j=0;j<N;j++){
-       // spinnorm=1.0/sqrt(spins[pos(j,0,N)][t+1]*spins[pos(j,0,N)][t+1]+spins[pos(j,1,N)][t+1]*spins[pos(j,1,N)][t+1]+spins[pos(j,2,N)][t+1]*spins[pos(j,2,N)][t+1]);
-       // spins[pos(j,0,N)][t+1]*=spinnorm;
-       // spins[pos(j,1,N)][t+1]*=spinnorm;
-       // spins[pos(j,2,N)][t+1]*=spinnorm;
-       // }
-
 // Step 3 Driftpredict: F(ut_n+1) and G(ut_n+1) - modifies driftpredict and noisepredict
-      CalcDriftVector(driftpredict,noisepredict,Jakobi,spins,h,t+1,N,L,J,DeltaJ,omegad,lambda,var,noise,SpinChainNoise,staggered,J2,cossin,phi,J3);
+    CalcDriftVector(driftpredict,noisepredict,Jakobi,spins,h,t+1,N,L,J,DeltaJ,omegad,lambda,var,noise,SpinChainNoise,staggered,J2,cossin,phi);
 //Step 4 Heun-Method - overwrites the spins[t+1] array again and fills it with Heun Prediction
-      HeunMethod(spins,driftvector,driftpredict,noisevector,noisepredict,noise,h,t,L);
+    HeunMethod(spins,driftvector,driftpredict,noisevector,noisepredict,noise,h,t,L);
 // Step 5 Projection Method: Normalise all spins, ensures that solution evolves on surface of sphere
-      Projecttoconservedmanifolds(spins,t,N,staggered);
-
-       // for(int j=0;j<N;j++){
-       // spinnorm=1.0/sqrt(spins[pos(j,0,N)][t+1]*spins[pos(j,0,N)][t+1]+spins[pos(j,1,N)][t+1]*spins[pos(j,1,N)][t+1]+spins[pos(j,2,N)][t+1]*spins[pos(j,2,N)][t+1]);
-       // spins[pos(j,0,N)][t+1]*=spinnorm;
-       // spins[pos(j,1,N)][t+1]*=spinnorm;
-       // spins[pos(j,2,N)][t+1]*=spinnorm;
-       // }
+    Projecttoconservedmanifolds(spins,t,N,staggered);
+// Calculate the remaining time - based on the calculation duration of the first two percent,
          if(t%(arraysize/50)==0 && t>0){
              double percentage=100.0*double(t)/double(arraysize);
              printf("%.3lf percent through\n",percentage);
-             // double driftcontribution=0.0;
-             // double noisecontribution=0.0;
-             // for(int j=0;j<L;j++){
-             //     driftcontribution+=driftvector[j];
-             //     noisecontribution+=noisevector[j];
-             // }
-             // printf("%.10lf\t %.10lf\n",driftcontribution,noisecontribution);
             if(count==1){
             double sec_total    = (double)(clock() - clock_total)/(CLOCKS_PER_SEC);
 
-            // printing the times
+            // printing the times - after 2% of the total calculation time has passed
 	        std::cout << "- total expected runtime: ( " << 100.0/percentage * sec_total/60 << " minutes )" << std::endl;
             }
             count=2;
          }
-
-
  }
- }
+// glob_maxit counts the maximum number of iteration steps needed to project the solution back to the conserved manifild
 printf("maxiterations:%i",glob_maxit);
 printf("finished everything\n");
 
@@ -521,7 +334,7 @@ printf("finished everything\n");
             if(stepsize>arraysize){stepsize=1;}
             printf("this is the stepsize %i\n",stepsize);
             char filename[1024];
-            snprintf (filename, sizeof (filename), "dataflor2/HamiltonianDynamics_Heun=%i_init=%i_arsize=%i_N=%i_J=%.2lf_J2=%.2lf_DJ=%.3lf_od=%.3lf_lam=%.3lf_h=%.8lf_n=%.1lf_T=%3lf_10kvar=%.3lf_stag=%.2lf_cossin=%i_phi=%.3lf_J3=%.3lf.txt",Heun,init,arraysize,N,J,J2,DeltaJ,omegad,lambda,h,noise,T,10000*var,staggered,cossin,phi,J3);
+            snprintf (filename, sizeof (filename), "dataflor2/HamiltonianDynamics_Heun=%i_init=%i_arsize=%i_N=%i_J=%.2lf_J2=%.2lf_DJ=%.3lf_od=%.3lf_lam=%.3lf_h=%.8lf_n=%.1lf_T=%3lf_10kvar=%.3lf_stag=%.2lf_cossin=%i_phi=%.3lf.txt",Heun,init,arraysize,N,J,J2,DeltaJ,omegad,lambda,h,noise,T,10000*var,staggered,cossin,phi);
 
             FILE *fh = NULL;
             fh = fopen (filename, "w");
@@ -532,7 +345,7 @@ printf("finished everything\n");
             fclose (fh);
 // Calculate the magnetisations
             char filename1[1024];
-            snprintf (filename1, sizeof (filename1), "dataflor2/magnetisations_Heun=%i_init=%i_arsize=%i_N=%i_J=%.2lf_J2=%.2lf_DJ=%.3lf_od=%.3lf_lam=%.3lf_h=%.5lf_n=%.1lf_T=%3lf_10kvar=%.3lf_stag=%.2lf_cossin=%i_phi=%.3lf_J3=%.3lf.txt",Heun,init,arraysize,N,J,J2,DeltaJ,omegad,lambda,h,noise,T,10000*var,staggered,cossin,phi,J3);
+            snprintf (filename1, sizeof (filename1), "dataflor2/magnetisations_Heun=%i_init=%i_arsize=%i_N=%i_J=%.2lf_J2=%.2lf_DJ=%.3lf_od=%.3lf_lam=%.3lf_h=%.5lf_n=%.1lf_T=%3lf_10kvar=%.3lf_stag=%.2lf_cossin=%i_phi=%.3lf.txt",Heun,init,arraysize,N,J,J2,DeltaJ,omegad,lambda,h,noise,T,10000*var,staggered,cossin,phi);
 
             FILE *fh1 = NULL;
             fh1 = fopen (filename1, "w");
@@ -569,7 +382,7 @@ printf("finished everything\n");
           fclose (fh1);
 //Output from Heun scheme dot products
             char filename2[1024];
-            snprintf (filename2, sizeof (filename2), "dataflor2/dotproducts_Heun=%i_init=%i_arsize=%i_N=%i_J=%.2lf_J2=%.2lf_DJ=%.3lf_od=%.3lf_lam=%.3lf_h=%.5lf_n=%.1lf_T=%3lf_10kvar=%.3lf_stag=%.2lf_cossin=%i_phi=%.3lf_J3=%.3lf.txt",Heun,init,arraysize,N,J,J2,DeltaJ,omegad,lambda,h,noise,T,10000*var,staggered,cossin,phi,J3);
+            snprintf (filename2, sizeof (filename2), "dataflor2/dotproducts_Heun=%i_init=%i_arsize=%i_N=%i_J=%.2lf_J2=%.2lf_DJ=%.3lf_od=%.3lf_lam=%.3lf_h=%.5lf_n=%.1lf_T=%3lf_10kvar=%.3lf_stag=%.2lf_cossin=%i_phi=%.3lf.txt",Heun,init,arraysize,N,J,J2,DeltaJ,omegad,lambda,h,noise,T,10000*var,staggered,cossin,phi);
 
             FILE *fh2 = NULL;
             fh2 = fopen (filename2, "w");
@@ -593,7 +406,7 @@ printf("finished everything\n");
         correlationsum=0.0;
     // Time loop
         for(int l=equilibrationtime;l<arraysize-1;l++){
-    // Calculate the spin-spin correlation function <S_i \dot S_j> for every time step
+    // Calculate the spin-spin correlation function <S_0 \dot S_j> for every time step
     //  sxi*sxj+syi*syj+szi*szj;
         correlationsum+=spins[pos(0,0,N)][l]*spins[pos(j,0,N)][l]+spins[pos(0,1,N)][l]*spins[pos(j,1,N)][l]+spins[pos(0,2,N)][l]*spins[pos(j,2,N)][l];
         }
@@ -601,7 +414,7 @@ printf("finished everything\n");
     }
 
             char filename3[1024];
-            snprintf (filename3, sizeof (filename3), "dataflor2/correlations_Heun=%i_init=%i_arsize=%i_N=%i_J=%.2lf_J2=%.2lf_DJ=%.3lf_od=%.3lf_lam=%.3lf_h=%.5lf_n=%.1lf_T=%3lf_10kvar=%.3lf_stag=%.2lf_cossin=%i_phi=%.3lf_J3=%.3lf.txt",Heun,init,arraysize,N,J,J2,DeltaJ,omegad,lambda,h,noise,T,10000*var,staggered,cossin,phi,J3);
+            snprintf (filename3, sizeof (filename3), "dataflor2/correlations_Heun=%i_init=%i_arsize=%i_N=%i_J=%.2lf_J2=%.2lf_DJ=%.3lf_od=%.3lf_lam=%.3lf_h=%.5lf_n=%.1lf_T=%3lf_10kvar=%.3lf_stag=%.2lf_cossin=%i_phi=%.3lf.txt",Heun,init,arraysize,N,J,J2,DeltaJ,omegad,lambda,h,noise,T,10000*var,staggered,cossin,phi);
 
             FILE *fh3 = NULL;
             fh3 = fopen (filename3, "w");
@@ -637,7 +450,7 @@ for(int l=equilibrationtime;l<arraysize-1;l++){
 spincurrentvariance*=1.0/(double(arraysize-2-equilibrationtime));
 
 char filename4[1024];
-snprintf (filename4, sizeof (filename4), "dataflor2/spincurrent_Heun=%i_init=%i_arsize=%i_N=%i_J=%.2lf_J2=%.2lf_DJ=%.3lf_od=%.3lf_lam=%.3lf_h=%.5lf_n=%.1lf_T=%3lf_10kvar=%.3lf_stag=%.2lf_cossin=%i_phi=%.3lf_J3=%.3lf.txt",Heun,init,arraysize,N,J,J2,DeltaJ,omegad,lambda,h,noise,T,10000*var,staggered,cossin,phi,J3);
+snprintf (filename4, sizeof (filename4), "dataflor2/spincurrent_Heun=%i_init=%i_arsize=%i_N=%i_J=%.2lf_J2=%.2lf_DJ=%.3lf_od=%.3lf_lam=%.3lf_h=%.5lf_n=%.1lf_T=%3lf_10kvar=%.3lf_stag=%.2lf_cossin=%i_phi=%.3lf.txt",Heun,init,arraysize,N,J,J2,DeltaJ,omegad,lambda,h,noise,T,10000*var,staggered,cossin,phi);
 
 FILE *fh4 = NULL;
 fh4 = fopen (filename4, "a");
@@ -646,7 +459,7 @@ fh4 = fopen (filename4, "a");
 
 // Detailed spincurrents
 char filename5[1024];
- snprintf (filename5, sizeof (filename5), "dataflor2/indscurrent_Heun=%i_init=%i_arsize=%i_N=%i_J=%.2lf_J2=%.2lf_DJ=%.3lf_od=%.3lf_lam=%.3lf_h=%.5lf_n=%.1lf_T=%3lf_10kvar=%.3lf_stag=%.2lf_cossin=%i_phi=%.3lf_J3=%.3lf.txt",Heun,init,arraysize,N,J,J2,DeltaJ,omegad,lambda,h,noise,T,10000*var,staggered,cossin,phi,J3);
+ snprintf (filename5, sizeof (filename5), "dataflor2/indscurrent_Heun=%i_init=%i_arsize=%i_N=%i_J=%.2lf_J2=%.2lf_DJ=%.3lf_od=%.3lf_lam=%.3lf_h=%.5lf_n=%.1lf_T=%3lf_10kvar=%.3lf_stag=%.2lf_cossin=%i_phi=%.3lf.txt",Heun,init,arraysize,N,J,J2,DeltaJ,omegad,lambda,h,noise,T,10000*var,staggered,cossin,phi);
 
 FILE *fh5 = NULL;
 fh5 = fopen (filename5, "w");
@@ -736,13 +549,6 @@ int mod(int jn, int N){
   else if(jn==N) return 0;
   else return jn;
 }
-
-void cross(double** A, double** B, double* result, int t) {
-// Calculate the cross product of spins
-        result[0] = -A[2][t] * B[1][t] + A[1][t] * B[2][t];
-        result[1] = A[2][t] * B[0][t] - A[0][t] * B[2][t];
-        result[2] = -A[1][t]*B[0][t] + A[0][t]*B[1][t];
-    }
 
 void PrintMatrix(double **Matrix, int L){
               for (int i=0;i<L;i++) {
@@ -843,7 +649,7 @@ void randomize_mat_contents(gsl_matrix *matrix, int size)
  **************************************************************/
 
 
-void CalcDriftVector(double* driftvector, double* noisevector,double** Jakobi, double** spins,double h, int t, int N, int L, double J, double DeltaJ, double omegad, double lambda, double var, double noise,double* SpinChainNoise, double staggered, double J2,int cossin, double phi, double J3){
+void CalcDriftVector(double* driftvector, double* noisevector,double** Jakobi, double** spins,double h, int t, int N, int L, double J, double DeltaJ, double omegad, double lambda, double var, double noise,double* SpinChainNoise, double staggered, double J2,int cossin, double phi){
 
     int jn;
     double drive=0.0;
@@ -856,7 +662,7 @@ void CalcDriftVector(double* driftvector, double* noisevector,double** Jakobi, d
 		// Driving nearest-neighbours with a sawtooth function
 		drive=((sin(h*t*omegad) + sin(2.0*h*t*omegad)/2. + sin(3.0*h*t*omegad)/3. + sin(4.0*h*t*omegad)/4.)/M_PI);
 		}
-		drive2=sin(h*t*2.0*omegad+phi);
+		drive2=sin(h*t*omegad+phi);
     // Initialise global arrays
     double *A = new double[3]();
     double *B = new double[3]();
@@ -879,7 +685,7 @@ void CalcDriftVector(double* driftvector, double* noisevector,double** Jakobi, d
         sjvec[1]=spins[pos(j,1,N)][t];
         sjvec[2]=spins[pos(j,2,N)][t];
 
-         // Spin at next nearest neighbouring site
+         // Spin at next nearest neighbouring site, jn
         jn=j-2;
         sjnvec[0]=spins[pos2(jn,0,N)][t];
         sjnvec[1]=spins[pos2(jn,1,N)][t];
@@ -890,11 +696,12 @@ void CalcDriftVector(double* driftvector, double* noisevector,double** Jakobi, d
         C[1]= -(sjvec[2] * sjnvec[0] - sjvec[0] * sjnvec[2]);
         C[2]= -(-sjvec[1] * sjnvec[0] + sjvec[0] * sjnvec[1]);
 
-        driftvector[pos2(j,0,N)] += C[0]*(J3);
-        driftvector[pos2(j,1,N)] += C[1]*(J3);
-        driftvector[pos2(j,2,N)] += C[2]*(J3);
+				// Heisenberg interaction with next-nearest-neighbour drive
+        driftvector[pos2(j,0,N)] += C[0]*J2*drive2;
+        driftvector[pos2(j,1,N)] += C[1]*J2*drive2;
+        driftvector[pos2(j,2,N)] += C[2]*J2*drive2;
 
-        // Spin at neighbouring site
+        // Spin at neighbouring site, jn
         jn=j-1;
         sjnvec[0]=spins[pos(jn,0,N)][t];
         sjnvec[1]=spins[pos(jn,1,N)][t];
@@ -905,28 +712,33 @@ void CalcDriftVector(double* driftvector, double* noisevector,double** Jakobi, d
         B[1]= -(sjvec[2] * sjnvec[0] - sjvec[0] * sjnvec[2])*(J);
         B[2]= -(-sjvec[1] * sjnvec[0] + sjvec[0] * sjnvec[1])*(J);
 
+				// Heisenberg Wechselwirkung NN-Terme
         driftvector[pos(j,0,N)] += B[0];
         driftvector[pos(j,1,N)] += B[1];
         driftvector[pos(j,2,N)] += B[2];
 
+				// Generiert den Noise für jeden Spin
         noisevector[pos(j,0,N)] += B[0] / J * SpinChainNoise[mod(jn,N)];
         noisevector[pos(j,1,N)] += B[1] / J * SpinChainNoise[mod(jn,N)];
         noisevector[pos(j,2,N)] += B[2] / J * SpinChainNoise[mod(jn,N)];
 
-        // -sj x sj+1
+        // choose spin at position jn
         jn=j+1;
         sjnvec[0]=spins[pos(jn,0,N)][t];
         sjnvec[1]=spins[pos(jn,1,N)][t];
         sjnvec[2]=spins[pos(jn,2,N)][t];
 
+				// -sj x sj+1
         A[0]= -(-sjvec[2] * sjnvec[1] + sjvec[1] * sjnvec[2])*(J);
         A[1]= -(sjvec[2] * sjnvec[0] - sjvec[0] * sjnvec[2])*(J);
         A[2]= -(-sjvec[1] * sjnvec[0] + sjvec[0] * sjnvec[1])*(J);
 
+				// Heisenberg Wechselwirkung NN-Terme
         driftvector[pos(j,0,N)] += A[0];
         driftvector[pos(j,1,N)] += A[1];
         driftvector[pos(j,2,N)] += A[2];
 
+				// generate noise for every spin
         noisevector[pos(j,0,N)] += A[0] / J * SpinChainNoise[j];
         noisevector[pos(j,1,N)] += A[1] / J * SpinChainNoise[j];
         noisevector[pos(j,2,N)] += A[2] / J * SpinChainNoise[j];
@@ -937,44 +749,38 @@ void CalcDriftVector(double* driftvector, double* noisevector,double** Jakobi, d
         sjnvec[1]=spins[pos2(jn,1,N)][t];
         sjnvec[2]=spins[pos2(jn,2,N)][t];
 
-        // -sj x sj+2
-        //C[0]= -(-sjvec[2] * sjnvec[1] + sjvec[1] * sjnvec[2])*(J2);
-        //C[1]= -(sjvec[2] * sjnvec[0] - sjvec[0] * sjnvec[2])*(J2);
-        //C[2]= -(-sjvec[1] * sjnvec[0] + sjvec[0] * sjnvec[1])*(J2);
-
+				// -sj x sj+2
 				D[0]= -(-sjvec[2] * sjnvec[1] + sjvec[1] * sjnvec[2]);
 				D[1]= -(sjvec[2] * sjnvec[0] - sjvec[0] * sjnvec[2]);
 				D[2]= -(-sjvec[1] * sjnvec[0] + sjvec[0] * sjnvec[1]);
 
-        driftvector[pos2(j,0,N)] += D[0]*(J3);
-        driftvector[pos2(j,1,N)] += D[1]*(J3);
-        driftvector[pos2(j,2,N)] += D[2]*(J3);
+				// Heisenberg interaction with NNN interaction and drive
+        driftvector[pos2(j,0,N)] += D[0]*J2*drive2;
+        driftvector[pos2(j,1,N)] += D[1]*J2*drive2;
+        driftvector[pos2(j,2,N)] += D[2]*J2*drive2;
 
 
-        // staggered drive
+        // staggered terms go here
         if(j%2==0){ // j even (sj x sj-1)-Terme;
-           //beachte array startet bei 0, even/odd dadurch gegenueber array mit start1 verschoben
-            driftvector[pos(j,0,N)] += B[0]*DeltaJ*drive+staggered*spins[pos(j,1,N)][t];
-            driftvector[pos(j,1,N)] += B[1]*DeltaJ*drive-staggered*spins[pos(j,0,N)][t];
-            driftvector[pos(j,2,N)] += B[2]*DeltaJ*drive;
+						// gestaggertes Magnetfeld
+						driftvector[pos(j,0,N)] += staggered*spins[pos(j,1,N)][t];
+						driftvector[pos(j,1,N)] -= staggered*spins[pos(j,0,N)][t];
 
-						// Driving next-nearest terms with phase shifted cos terms
+						// Heisenberg Wechselwirkung mit drive bei NN-Terme
+						driftvector[pos(j,0,N)] += (-A[0]+B[0])*DeltaJ*drive;
+						driftvector[pos(j,1,N)] += (-A[1]+B[1])*DeltaJ*drive;
+						driftvector[pos(j,2,N)] += (-A[2]+B[2])*DeltaJ*drive;
 
-						driftvector[pos2(j,0,N)] += (C[0]+D[0])*drive2*(J2);
-						driftvector[pos2(j,1,N)] += (C[1]+D[1])*drive2*(J2);
-						driftvector[pos2(j,2,N)] += (C[2]+D[2])*drive2*(J2);
-            // if(j==0 && (N+1)%2==0){
-            // // Boundary Terme verschwinden fuer den ersten Spin bei ungerader Anzahl an Spins
-            //   driftvector[pos(j,0,N)] -= B[0]*DeltaJ*drive+staggered*spins[pos(j,1,N)][t];
-            //   driftvector[pos(j,1,N)] -= B[1]*DeltaJ*drive-staggered*spins[pos(j,0,N)][t];
-            //   driftvector[pos(j,2,N)] -= B[2]*DeltaJ*drive;
-            // }
         }
         else{ // j odd (sj x sj+1)-Terme
-            driftvector[pos(j,0,N)] += A[0]*DeltaJ*drive-staggered*spins[pos(j,1,N)][t];
-            driftvector[pos(j,1,N)] += A[1]*DeltaJ*drive+staggered*spins[pos(j,0,N)][t];
-            driftvector[pos(j,2,N)] += A[2]*DeltaJ*drive;
+						// staggered magnetic field
+						driftvector[pos(j,0,N)] -= staggered*spins[pos(j,1,N)][t];
+						driftvector[pos(j,1,N)] += staggered*spins[pos(j,0,N)][t];
 
+						// Heisenberg-interaction with drive contribution
+						driftvector[pos(j,0,N)] += (A[0]-B[0])*DeltaJ*drive;
+						driftvector[pos(j,1,N)] += (A[1]-B[1])*DeltaJ*drive;
+						driftvector[pos(j,2,N)] += (A[2]-B[2])*DeltaJ*drive;
         }
 
         // Berechnung der Eintraege fuer die Jakobi Matrix - damping contribution
@@ -1046,8 +852,6 @@ void CalcDriftVector(double* driftvector, double* noisevector,double** Jakobi, d
 **************************************************************/
 
 void Projecttoconservedmanifolds(double** spins, int t, int N, double staggered){
-    // construct g' matrix of dimensions: N+3 which is the number of conserved quantitites, and 3N are all spin coordinates (used for the gradient)
-    // double **gprime = new double *[N+3]();
     // contains all conserved quantitites
     double *g = new double [N+3]();
     // Lagrange parameter for conserved quantities
@@ -1071,6 +875,7 @@ void Projecttoconservedmanifolds(double** spins, int t, int N, double staggered)
     // convergencethreshold
     double convergencethreshold = 1.0e-14;
 
+		// allocate memory for the matrices
     gsl_matrix * gprime = gsl_matrix_alloc (N+3, 3*N);
     gsl_matrix * gprimeT = gsl_matrix_alloc (3*N, N+3);
     gsl_matrix * G = gsl_matrix_alloc (N+3, N+3);
@@ -1079,10 +884,6 @@ void Projecttoconservedmanifolds(double** spins, int t, int N, double staggered)
     gsl_matrix_set_zero(gprime);
     gsl_matrix_set_zero(gprimeT);
     gsl_matrix_set_zero(G);
-    // for (int i = 0; i < L; i++)
-    // {
-    //     gprime[i] = new double[3*N]();
-    // }
 
     // fill gprime
     int count=0;
@@ -1112,26 +913,12 @@ void Projecttoconservedmanifolds(double** spins, int t, int N, double staggered)
             gsl_matrix_set(G,i,j,sum);
         }
     }
-    // Print the matrix gprime to perform some debugging
-    //    double element;
-
-    // for (int i = 0; i < N+3; ++i) {
-    //     for (int j = 0; j < 3*N; ++j) {
-    //         element = gsl_matrix_get(gprime, i, j);
-    //         printf("%.3lf ", element);
-    //     }
-    //     printf("\n");
-    // }
-    //print_mat_contents(G,N+3);
 
     // Invert the matrix product
     gsl_matrix *inverse = invert_a_matrix(G,N+3);
 
     // Start the Newton Iteration loop
     do{
-    //for(int k=0;k<maxiterations || normofg<convergencethreshold;k++){
-    // Calculate the argument for the vector input g
-    // (1) gprimeT lambda
 
     for(int i=0;i<3*N;i++){
         double sum=0.0;
@@ -1208,11 +995,11 @@ void Projecttoconservedmanifolds(double** spins, int t, int N, double staggered)
 //printf("Norm of g:%.15lf \t Iterations needed:%i",normofg,newtoniterations);
 if(newtoniterations>glob_maxit) glob_maxit=newtoniterations;
 
-// if ( glob_maxit == maxiterations )
-// {
-//     std::cout << "reached no convergence - max number of iterations reached" << std::endl;
-//     std::exit( EXIT_FAILURE );
-// }
+if ( glob_maxit == maxiterations )
+{
+    std::cout << "reached no convergence - max number of iterations reached" << std::endl;
+    std::exit( EXIT_FAILURE );
+}
 
 // ////////////////////////////
 // char filename4[1024];
@@ -1225,13 +1012,6 @@ if(newtoniterations>glob_maxit) glob_maxit=newtoniterations;
 //   }
 //     fclose (fh4);
 // /////////////////////////////
-// // End of Newton Iterations
-// printf("\n");
-// printf("New Timestep\n");
-// printf("\n");
-
-// Print the convergence information to distance
-
 
 // Update to the new spin-vectors
   for(int i=0;i<3*N;i++){
@@ -1243,13 +1023,8 @@ if(newtoniterations>glob_maxit) glob_maxit=newtoniterations;
     gsl_matrix_free (G);
     gsl_matrix_free (inverse);
 
-    // Measure of convergence
-    // Plot that shows the convergence
-
     // free memory
-
     delete[] g;
     delete[] lambdavec;
     delete[] convergencechecker;
-
 }
