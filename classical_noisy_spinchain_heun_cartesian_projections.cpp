@@ -138,7 +138,7 @@ double phi=0.0;
 *
 **************************************************************/
 
-if (argc==16){
+if (argc==15){
     Heun=atoi(argv[1]);
     arraysize=atoi(argv[2]);
     h=atof(argv[3]);
@@ -168,7 +168,7 @@ if (argc==16){
     double **Jakobi = new double *[L]();
     double *SpinChainNoise = new double [N]();
 
-    printf("Equilibration time is:%i",equilibrationtime);
+    printf("Equilibration time is:%i\n",equilibrationtime);
     double *scurrent = new double[arraysize-equilibrationtime]();
 
 
@@ -295,7 +295,6 @@ printf("alpha:%.5lf\t beta:%.5lf\n",alpha,beta);
      for(int k=0;k<N;k++){
        SpinChainNoise[k]=gsl_ran_gaussian (r,sqrt(var));
      }
-
 // Step 1 Calculate the drift F(u_n) - modifies the arrays driftvector and noisevector
     CalcDriftVector(driftvector, noisevector, Jakobi, spins, h, t, N, L, J, DeltaJ, omegad, lambda, var, noise, SpinChainNoise,staggered,J2,cossin,phi);
 // Step 2 Predict the next step based on Euler ut_n+1=F(u_n)*h+dW*noisevector; ut_n+1, according to Euler Maruyama, actually modifies spins[t+1]
@@ -334,7 +333,7 @@ printf("finished everything\n");
             if(stepsize>arraysize){stepsize=1;}
             printf("this is the stepsize %i\n",stepsize);
             char filename[1024];
-            snprintf (filename, sizeof (filename), "dataflor2/HamiltonianDynamics_Heun=%i_init=%i_arsize=%i_N=%i_J=%.2lf_J2=%.2lf_DJ=%.3lf_od=%.3lf_lam=%.3lf_h=%.8lf_n=%.1lf_T=%3lf_10kvar=%.3lf_stag=%.2lf_cossin=%i_phi=%.3lf.txt",Heun,init,arraysize,N,J,J2,DeltaJ,omegad,lambda,h,noise,T,10000*var,staggered,cossin,phi);
+            snprintf (filename, sizeof (filename), "datadriveperturb/Hdyn/HamiltonianDynamics_Heun=%i_init=%i_arsize=%i_N=%i_J=%.2lf_J2=%.2lf_DJ=%.3lf_od=%.3lf_lam=%.3lf_h=%.8lf_n=%.1lf_T=%3lf_10kvar=%.3lf_stag=%.2lf_cossin=%i_phi=%.3lf.txt",Heun,init,arraysize,N,J,J2,DeltaJ,omegad,lambda,h,noise,T,10000*var,staggered,cossin,phi);
 
             FILE *fh = NULL;
             fh = fopen (filename, "w");
@@ -345,7 +344,7 @@ printf("finished everything\n");
             fclose (fh);
 // Calculate the magnetisations
             char filename1[1024];
-            snprintf (filename1, sizeof (filename1), "dataflor2/magnetisations_Heun=%i_init=%i_arsize=%i_N=%i_J=%.2lf_J2=%.2lf_DJ=%.3lf_od=%.3lf_lam=%.3lf_h=%.5lf_n=%.1lf_T=%3lf_10kvar=%.3lf_stag=%.2lf_cossin=%i_phi=%.3lf.txt",Heun,init,arraysize,N,J,J2,DeltaJ,omegad,lambda,h,noise,T,10000*var,staggered,cossin,phi);
+            snprintf (filename1, sizeof (filename1), "datadriveperturb/magn/magnetisations_Heun=%i_init=%i_arsize=%i_N=%i_J=%.2lf_J2=%.2lf_DJ=%.3lf_od=%.3lf_lam=%.3lf_h=%.5lf_n=%.1lf_T=%3lf_10kvar=%.3lf_stag=%.2lf_cossin=%i_phi=%.3lf.txt",Heun,init,arraysize,N,J,J2,DeltaJ,omegad,lambda,h,noise,T,10000*var,staggered,cossin,phi);
 
             FILE *fh1 = NULL;
             fh1 = fopen (filename1, "w");
@@ -382,7 +381,7 @@ printf("finished everything\n");
           fclose (fh1);
 //Output from Heun scheme dot products
             char filename2[1024];
-            snprintf (filename2, sizeof (filename2), "dataflor2/dotproducts_Heun=%i_init=%i_arsize=%i_N=%i_J=%.2lf_J2=%.2lf_DJ=%.3lf_od=%.3lf_lam=%.3lf_h=%.5lf_n=%.1lf_T=%3lf_10kvar=%.3lf_stag=%.2lf_cossin=%i_phi=%.3lf.txt",Heun,init,arraysize,N,J,J2,DeltaJ,omegad,lambda,h,noise,T,10000*var,staggered,cossin,phi);
+            snprintf (filename2, sizeof (filename2), "datadriveperturb/dotp/dotproducts_Heun=%i_init=%i_arsize=%i_N=%i_J=%.2lf_J2=%.2lf_DJ=%.3lf_od=%.3lf_lam=%.3lf_h=%.5lf_n=%.1lf_T=%3lf_10kvar=%.3lf_stag=%.2lf_cossin=%i_phi=%.3lf.txt",Heun,init,arraysize,N,J,J2,DeltaJ,omegad,lambda,h,noise,T,10000*var,staggered,cossin,phi);
 
             FILE *fh2 = NULL;
             fh2 = fopen (filename2, "w");
@@ -414,7 +413,7 @@ printf("finished everything\n");
     }
 
             char filename3[1024];
-            snprintf (filename3, sizeof (filename3), "dataflor2/correlations_Heun=%i_init=%i_arsize=%i_N=%i_J=%.2lf_J2=%.2lf_DJ=%.3lf_od=%.3lf_lam=%.3lf_h=%.5lf_n=%.1lf_T=%3lf_10kvar=%.3lf_stag=%.2lf_cossin=%i_phi=%.3lf.txt",Heun,init,arraysize,N,J,J2,DeltaJ,omegad,lambda,h,noise,T,10000*var,staggered,cossin,phi);
+            snprintf (filename3, sizeof (filename3), "datadriveperturb/correl/correlations_Heun=%i_init=%i_arsize=%i_N=%i_J=%.2lf_J2=%.2lf_DJ=%.3lf_od=%.3lf_lam=%.3lf_h=%.5lf_n=%.1lf_T=%3lf_10kvar=%.3lf_stag=%.2lf_cossin=%i_phi=%.3lf.txt",Heun,init,arraysize,N,J,J2,DeltaJ,omegad,lambda,h,noise,T,10000*var,staggered,cossin,phi);
 
             FILE *fh3 = NULL;
             fh3 = fopen (filename3, "w");
@@ -450,7 +449,7 @@ for(int l=equilibrationtime;l<arraysize-1;l++){
 spincurrentvariance*=1.0/(double(arraysize-2-equilibrationtime));
 
 char filename4[1024];
-snprintf (filename4, sizeof (filename4), "dataflor2/spincurrent_Heun=%i_init=%i_arsize=%i_N=%i_J=%.2lf_J2=%.2lf_DJ=%.3lf_od=%.3lf_lam=%.3lf_h=%.5lf_n=%.1lf_T=%3lf_10kvar=%.3lf_stag=%.2lf_cossin=%i_phi=%.3lf.txt",Heun,init,arraysize,N,J,J2,DeltaJ,omegad,lambda,h,noise,T,10000*var,staggered,cossin,phi);
+snprintf (filename4, sizeof (filename4), "datadriveperturb/scurr/spincurrent_Heun=%i_init=%i_arsize=%i_N=%i_J=%.2lf_J2=%.2lf_DJ=%.3lf_od=%.3lf_lam=%.3lf_h=%.5lf_n=%.1lf_T=%3lf_10kvar=%.3lf_stag=%.2lf_cossin=%i_phi=%.3lf.txt",Heun,init,arraysize,N,J,J2,DeltaJ,omegad,lambda,h,noise,T,10000*var,staggered,cossin,phi);
 
 FILE *fh4 = NULL;
 fh4 = fopen (filename4, "a");
@@ -459,7 +458,7 @@ fh4 = fopen (filename4, "a");
 
 // Detailed spincurrents
 char filename5[1024];
- snprintf (filename5, sizeof (filename5), "dataflor2/indscurrent_Heun=%i_init=%i_arsize=%i_N=%i_J=%.2lf_J2=%.2lf_DJ=%.3lf_od=%.3lf_lam=%.3lf_h=%.5lf_n=%.1lf_T=%3lf_10kvar=%.3lf_stag=%.2lf_cossin=%i_phi=%.3lf.txt",Heun,init,arraysize,N,J,J2,DeltaJ,omegad,lambda,h,noise,T,10000*var,staggered,cossin,phi);
+ snprintf (filename5, sizeof (filename5), "datadriveperturb/scurr/indscurrent_Heun=%i_init=%i_arsize=%i_N=%i_J=%.2lf_J2=%.2lf_DJ=%.3lf_od=%.3lf_lam=%.3lf_h=%.5lf_n=%.1lf_T=%3lf_10kvar=%.3lf_stag=%.2lf_cossin=%i_phi=%.3lf.txt",Heun,init,arraysize,N,J,J2,DeltaJ,omegad,lambda,h,noise,T,10000*var,staggered,cossin,phi);
 
 FILE *fh5 = NULL;
 fh5 = fopen (filename5, "w");
