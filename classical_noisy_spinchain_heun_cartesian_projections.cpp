@@ -6,7 +6,6 @@
 #define _USE_MATH_DEFINES
 
 #include <sys/time.h>
-
 #include <iostream>
 #include <sstream>
 
@@ -143,15 +142,15 @@ if (argc==15){
     arraysize=atoi(argv[2]);
     h=atof(argv[3]);
     J=atof(argv[4]);
-    DeltaJ=atof(argv[5]);
-    lambda=atof(argv[6]);
+    DeltaJ=atof(argv[5])/100.0;
+    lambda=atof(argv[6])/100.0;
     noise=atof(argv[7]);
-    T=atof(argv[8]); // contains now the temperature
+    T=atof(argv[8])/100.0; // contains now the temperature
     init=atoi(argv[9]);
     var=2.0*lambda*T*h; // contains now the variance for the noise
     N=atoi(argv[10]);
     staggered=atof(argv[11]);
-    J2=atof(argv[12]);
+    J2=atof(argv[12])/100.0;
 		cossin=atoi(argv[13]);
     phi=atof(argv[14]);
     printf("obtained parameters from the comand line:Heun=%i \t arraysize=%i \t h=%.6lf \t J=%.3lf \t DeltaJ=%.3lf \t lambda=%.3lf\t noise=%.1lf \t T=%.3lf \t init=%i \t var=%.8lf \t N=%i \t stag=%.3lf \t J2=%.3lf \t cossin=%i \t phi=%.3lf \n",Heun,arraysize,h,J,DeltaJ,lambda,noise,T,init,var,N,staggered,J2,cossin,phi);
@@ -159,7 +158,7 @@ if (argc==15){
 
 //Initialise arrays
     L=3*N;
-    int equilibrationtime=arraysize/10;
+    int equilibrationtime=arraysize/20;
     double *driftvector = new double[L]();
     double *driftpredict = new double[L]();
     double *noisevector = new double[L]();
@@ -169,7 +168,7 @@ if (argc==15){
     double *SpinChainNoise = new double [N]();
 
     printf("Equilibration time is:%i\n",equilibrationtime);
-    double *scurrent = new double[arraysize-equilibrationtime]();
+    double *scurrent = new double[arraysize]();
 
 
     for (int i = 0; i < L; i++)
@@ -330,75 +329,76 @@ printf("finished everything\n");
 //Output from Heun scheme example
             double timeincrements=0.025;
             int stepsize=(int)(timeincrements/h);
-            if(stepsize>arraysize){stepsize=1;}
-            printf("this is the stepsize %i\n",stepsize);
-            char filename[1024];
-            snprintf (filename, sizeof (filename), "datadriveperturb/Hdyn/HamiltonianDynamics_Heun=%i_init=%i_arsize=%i_N=%i_J=%.2lf_J2=%.2lf_DJ=%.3lf_od=%.3lf_lam=%.3lf_h=%.8lf_n=%.1lf_T=%3lf_10kvar=%.3lf_stag=%.2lf_cossin=%i_phi=%.3lf.txt",Heun,init,arraysize,N,J,J2,DeltaJ,omegad,lambda,h,noise,T,10000*var,staggered,cossin,phi);
-
-            FILE *fh = NULL;
-            fh = fopen (filename, "w");
-            for(int l=0;l<arraysize-1;l=l+stepsize){
-                // Output norm of spin 4 and all components of the spin
-            fprintf (fh, "%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.6lf\t\n",spins[9][l],spins[10][l],spins[11][l],spins[12][l],spins[13][l],spins[14][l],h*l);
-            }
-            fclose (fh);
+            // if(stepsize>arraysize){stepsize=1;}
+            // printf("this is the stepsize %i\n",stepsize);
+            // char filename[1024];
+            // snprintf (filename, sizeof (filename), "datadriveperturb/Hdyn/HamiltonianDynamics_Heun=%i_init=%i_arsize=%i_N=%i_J=%.2lf_J2=%.2lf_DJ=%.3lf_od=%.3lf_lam=%.3lf_h=%.8lf_n=%.1lf_T=%3lf_10kvar=%.3lf_stag=%.2lf_cossin=%i_phi=%.3lf.txt",Heun,init,arraysize,N,J,J2,DeltaJ,omegad,lambda,h,noise,T,10000*var,staggered,cossin,phi);
+						//
+            // FILE *fh = NULL;
+            // fh = fopen (filename, "w");
+            // for(int l=0;l<arraysize-1;l=l+stepsize){
+            //     // Output norm of spin 4 and all components of the spin
+            // fprintf (fh, "%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.10lf\t%.6lf\t\n",spins[9][l],spins[10][l],spins[11][l],spins[12][l],spins[13][l],spins[14][l],h*l);
+            // }
+            // fclose (fh);
 // Calculate the magnetisations
-            char filename1[1024];
-            snprintf (filename1, sizeof (filename1), "datadriveperturb/magn/magnetisations_Heun=%i_init=%i_arsize=%i_N=%i_J=%.2lf_J2=%.2lf_DJ=%.3lf_od=%.3lf_lam=%.3lf_h=%.5lf_n=%.1lf_T=%3lf_10kvar=%.3lf_stag=%.2lf_cossin=%i_phi=%.3lf.txt",Heun,init,arraysize,N,J,J2,DeltaJ,omegad,lambda,h,noise,T,10000*var,staggered,cossin,phi);
-
-            FILE *fh1 = NULL;
-            fh1 = fopen (filename1, "w");
-
-            for(int l=0;l<arraysize-1;l=l+stepsize){
-              double Mx=0.0;
-              double My=0.0;
-              double Mz=0.0;
-
-              double sx=0.0;
-              double sy=0.0;
-              double sz=0.0;
-
-              double chainlength=0.0;
-
-              for(int j=0;j<N;j++){
-                  Mx+=spins[pos(j,0,N)][l];
-                  My+=spins[pos(j,1,N)][l];
-                  Mz+=spins[pos(j,2,N)][l];
-
-                  sx=spins[pos(j,0,N)][l];
-                  sy=spins[pos(j,1,N)][l];
-                  sz=spins[pos(j,2,N)][l];
-
-                  chainlength+=sqrt(sx*sx+sy*sy+sz*sz);
-
-              }
-              Mx*=1.0/(double)N;
-              My*=1.0/(double)N;
-              Mz*=1.0/(double)N;
-              // Output norm of spin 3 and all components of the spin
-          fprintf (fh1, "%.15lf \t %.15lf \t %.15lf \t %.15lf\t %.15lf\t %.7lf\n",Mx,My,Mz,sqrt(Mx*Mx+My*My+Mz*Mz),chainlength,h*l);
-          }
-          fclose (fh1);
-//Output from Heun scheme dot products
-            char filename2[1024];
-            snprintf (filename2, sizeof (filename2), "datadriveperturb/dotp/dotproducts_Heun=%i_init=%i_arsize=%i_N=%i_J=%.2lf_J2=%.2lf_DJ=%.3lf_od=%.3lf_lam=%.3lf_h=%.5lf_n=%.1lf_T=%3lf_10kvar=%.3lf_stag=%.2lf_cossin=%i_phi=%.3lf.txt",Heun,init,arraysize,N,J,J2,DeltaJ,omegad,lambda,h,noise,T,10000*var,staggered,cossin,phi);
-
-            FILE *fh2 = NULL;
-            fh2 = fopen (filename2, "w");
-            for(int l=0;l<arraysize-1;l=l+stepsize){
-                double dotsum=0.0;
-                for(int j=0;j<N;j++){
-                    dotsum+=spins[pos(j,0,N)][l]*spins[pos(j+1,0,N)][l]+spins[pos(j,1,N)][l]*spins[pos(j+1,1,N)][l]+spins[pos(j,2,N)][l]*spins[pos(j+1,2,N)][l];
-                }
-                dotsum*=1.0/N;
-                // Output norm of spin 3 and all components of the spin
-            fprintf (fh2, "%.6lf\t%.6lf\n",dotsum,h*l);
-            }
-            fclose (fh2);
+//             char filename1[1024];
+//             snprintf (filename1, sizeof (filename1), "datadriveperturb/magn/magnetisations_Heun=%i_init=%i_arsize=%i_N=%i_J=%.2lf_J2=%.2lf_DJ=%.3lf_od=%.3lf_lam=%.3lf_h=%.5lf_n=%.1lf_T=%3lf_10kvar=%.3lf_stag=%.2lf_cossin=%i_phi=%.3lf.txt",Heun,init,arraysize,N,J,J2,DeltaJ,omegad,lambda,h,noise,T,10000*var,staggered,cossin,phi);
+//
+//             FILE *fh1 = NULL;
+//             fh1 = fopen (filename1, "w");
+//
+//             for(int l=0;l<arraysize-1;l=l+stepsize){
+//               double Mx=0.0;
+//               double My=0.0;
+//               double Mz=0.0;
+//
+//               double sx=0.0;
+//               double sy=0.0;
+//               double sz=0.0;
+//
+//               double chainlength=0.0;
+//
+//               for(int j=0;j<N;j++){
+//                   Mx+=spins[pos(j,0,N)][l];
+//                   My+=spins[pos(j,1,N)][l];
+//                   Mz+=spins[pos(j,2,N)][l];
+//
+//                   sx=spins[pos(j,0,N)][l];
+//                   sy=spins[pos(j,1,N)][l];
+//                   sz=spins[pos(j,2,N)][l];
+//
+//                   chainlength+=sqrt(sx*sx+sy*sy+sz*sz);
+//
+//               }
+//               Mx*=1.0/(double)N;
+//               My*=1.0/(double)N;
+//               Mz*=1.0/(double)N;
+//               // Output norm of spin 3 and all components of the spin
+//           fprintf (fh1, "%.15lf \t %.15lf \t %.15lf \t %.15lf\t %.15lf\t %.7lf\n",Mx,My,Mz,sqrt(Mx*Mx+My*My+Mz*Mz),chainlength,h*l);
+//           }
+//           fclose (fh1);
+// //Output from Heun scheme dot products
+//             char filename2[1024];
+//             snprintf (filename2, sizeof (filename2), "datadriveperturb/dotp/dotproducts_Heun=%i_init=%i_arsize=%i_N=%i_J=%.2lf_J2=%.2lf_DJ=%.3lf_od=%.3lf_lam=%.3lf_h=%.5lf_n=%.1lf_T=%3lf_10kvar=%.3lf_stag=%.2lf_cossin=%i_phi=%.3lf.txt",Heun,init,arraysize,N,J,J2,DeltaJ,omegad,lambda,h,noise,T,10000*var,staggered,cossin,phi);
+//
+//             FILE *fh2 = NULL;
+//             fh2 = fopen (filename2, "w");
+//             for(int l=0;l<arraysize-1;l=l+stepsize){
+//                 double dotsum=0.0;
+//                 for(int j=0;j<N;j++){
+//                     dotsum+=spins[pos(j,0,N)][l]*spins[pos(j+1,0,N)][l]+spins[pos(j,1,N)][l]*spins[pos(j+1,1,N)][l]+spins[pos(j,2,N)][l]*spins[pos(j+1,2,N)][l];
+//                 }
+//                 dotsum*=1.0/N;
+//                 // Output norm of spin 3 and all components of the spin
+//             fprintf (fh2, "%.6lf\t%.6lf\n",dotsum,h*l);
+//             }
+//             fclose (fh2);
 
 //Calculate the Spin-Spin correlation functions
     // Choose the spins, S_i and S_j
     // Spin loop
+
     double correlationsum=0.0;
 
     for(int j=0;j<N;j++){
@@ -413,7 +413,7 @@ printf("finished everything\n");
     }
 
             char filename3[1024];
-            snprintf (filename3, sizeof (filename3), "datadriveperturb/correl/correlations_Heun=%i_init=%i_arsize=%i_N=%i_J=%.2lf_J2=%.2lf_DJ=%.3lf_od=%.3lf_lam=%.3lf_h=%.5lf_n=%.1lf_T=%3lf_10kvar=%.3lf_stag=%.2lf_cossin=%i_phi=%.3lf.txt",Heun,init,arraysize,N,J,J2,DeltaJ,omegad,lambda,h,noise,T,10000*var,staggered,cossin,phi);
+            snprintf (filename3, sizeof (filename3), "datadriveperturb/correl/correlations_Heun=%i_init=%i_arsize=%i_N=%i_J=%.2lf_J2=%.2lf_DJ=%.3lf_od=%.3lf_lam=%.3lf_h=%.5lf_n=%.1lf_T=%3lf_stag=%.2lf_cossin=%i_phi=%.3lf.txt",Heun,init,arraysize,N,J,J2,DeltaJ,omegad,lambda,h,noise,T,staggered,cossin,phi);
 
             FILE *fh3 = NULL;
             fh3 = fopen (filename3, "w");
@@ -429,13 +429,21 @@ printf("finished everything\n");
     double spincurrentmean=0.0;
     double spincurrentvariance=0.0;
     double spincateacht=0.0;
+// Write the statistics on the current before the equilibration time
+		for(int l=0;l<equilibrationtime;l++){
+            for(int j=0;j<N;j++){
+            spincurrent+=spins[pos(j,0,N)][l]*spins[pos(j+1,1,N)][l]-spins[pos(j,1,N)][l]*spins[pos(j+1,0,N)][l];
+            }
+						scurrent[l]=spincurrent;
+						spincurrent=0.0;
+    }
 
     for(int l=equilibrationtime;l<arraysize-1;l++){
             for(int j=0;j<N;j++){
             spincurrent+=spins[pos(j,0,N)][l]*spins[pos(j+1,1,N)][l]-spins[pos(j,1,N)][l]*spins[pos(j+1,0,N)][l];
             }
     }
-        spincurrentmean=spincurrent/(double(arraysize-1-equilibrationtime));
+        spincurrentmean=spincurrent/(double(N)*double(arraysize-1-equilibrationtime));
 // Calculate the variance of the current
 for(int l=equilibrationtime;l<arraysize-1;l++){
         //calculate the spincurrent
@@ -443,13 +451,13 @@ for(int l=equilibrationtime;l<arraysize-1;l++){
         for(int j=0;j<N;j++){
         spincateacht+=spins[pos(j,0,N)][l]*spins[pos(j+1,1,N)][l]-spins[pos(j,1,N)][l]*spins[pos(j+1,0,N)][l];
         }
-        scurrent[l-equilibrationtime]=spincateacht;
+        scurrent[l]=spincateacht/double(N);
         spincurrentvariance+=(spincateacht-spincurrentmean)*(spincateacht-spincurrentmean);
 }
 spincurrentvariance*=1.0/(double(arraysize-2-equilibrationtime));
 
 char filename4[1024];
-snprintf (filename4, sizeof (filename4), "datadriveperturb/scurr/spincurrent_Heun=%i_init=%i_arsize=%i_N=%i_J=%.2lf_J2=%.2lf_DJ=%.3lf_od=%.3lf_lam=%.3lf_h=%.5lf_n=%.1lf_T=%3lf_10kvar=%.3lf_stag=%.2lf_cossin=%i_phi=%.3lf.txt",Heun,init,arraysize,N,J,J2,DeltaJ,omegad,lambda,h,noise,T,10000*var,staggered,cossin,phi);
+snprintf (filename4, sizeof (filename4), "datadriveperturb/scurr/spincurrent_Heun=%i_init=%i_arsize=%i_N=%i_J=%.2lf_J2=%.2lf_DJ=%.3lf_od=%.3lf_lam=%.3lf_h=%.5lf_n=%.1lf_T=%3lf_stag=%.2lf_cossin=%i_phi=%.3lf.txt",Heun,init,arraysize,N,J,J2,DeltaJ,omegad,lambda,h,noise,T,staggered,cossin,phi);
 
 FILE *fh4 = NULL;
 fh4 = fopen (filename4, "a");
@@ -458,15 +466,43 @@ fh4 = fopen (filename4, "a");
 
 // Detailed spincurrents
 char filename5[1024];
- snprintf (filename5, sizeof (filename5), "datadriveperturb/scurr/indscurrent_Heun=%i_init=%i_arsize=%i_N=%i_J=%.2lf_J2=%.2lf_DJ=%.3lf_od=%.3lf_lam=%.3lf_h=%.5lf_n=%.1lf_T=%3lf_10kvar=%.3lf_stag=%.2lf_cossin=%i_phi=%.3lf.txt",Heun,init,arraysize,N,J,J2,DeltaJ,omegad,lambda,h,noise,T,10000*var,staggered,cossin,phi);
+ snprintf (filename5, sizeof (filename5), "datadriveperturb/scurr/indscurrent_Heun=%i_init=%i_arsize=%i_N=%i_J=%.2lf_J2=%.2lf_DJ=%.3lf_od=%.3lf_lam=%.3lf_h=%.5lf_n=%.1lf_T=%3lf_stag=%.2lf_cossin=%i_phi=%.3lf.txt",Heun,init,arraysize,N,J,J2,DeltaJ,omegad,lambda,h,noise,T,staggered,cossin,phi);
 
 FILE *fh5 = NULL;
 fh5 = fopen (filename5, "w");
-for(int l=equilibrationtime;l<arraysize-1;l+=stepsize){
-            fprintf (fh5, "%.10lf\t %.5lf\n",scurrent[l-equilibrationtime],h*l);
+for(int l=0;l<arraysize-1;l+=stepsize){
+            fprintf (fh5, "%.10lf\t %.5lf\n",scurrent[l],h*l);
 }
 
                 fclose (fh5);
+// // Write the magnetic order parameter
+char filename6[1024];
+ snprintf (filename6, sizeof (filename6), "datadriveperturb/orderparam/orderparam_Heun=%i_init=%i_arsize=%i_N=%i_J=%.2lf_J2=%.2lf_DJ=%.3lf_od=%.3lf_lam=%.3lf_h=%.5lf_n=%.1lf_T=%3lf_stag=%.2lf_cossin=%i_phi=%.3lf.txt",Heun,init,arraysize,N,J,J2,DeltaJ,omegad,lambda,h,noise,T,staggered,cossin,phi);
+
+FILE *fh6 = NULL;
+fh6 = fopen (filename6, "w");
+double orderparamx=0.0;
+double orderparamy=0.0;
+double orderparamz=0.0;
+for(int l=equilibrationtime;l<arraysize-1;l++){
+				for(int j=0;j<N;j+=2){
+				orderparamx+=spins[pos(j,0,N)][l];
+				orderparamy+=spins[pos(j,1,N)][l];
+				orderparamz+=spins[pos(j,2,N)][l];
+				}
+				for(int j=1;j<N;j+=2){
+					orderparamx-=spins[pos(j,0,N)][l];
+					orderparamy-=spins[pos(j,1,N)][l];
+					orderparamz-=spins[pos(j,2,N)][l];
+				}
+}
+		orderparamx=orderparamx/(double(N)*double(arraysize-1-equilibrationtime));
+		orderparamy=orderparamy/(double(N)*double(arraysize-1-equilibrationtime));
+		orderparamz=orderparamz/(double(N)*double(arraysize-1-equilibrationtime));
+
+            fprintf (fh6, "%.10lf\t %.10lf\t %.10lf\n",orderparamx,orderparamy,orderparamz);
+
+                fclose (fh6);
 
 // free memory
 
@@ -845,6 +881,15 @@ void CalcDriftVector(double* driftvector, double* noisevector,double** Jakobi, d
     delete[] sjnvec;
 
 }
+
+/**************************************************************
+*
+* Calculate dynamical spin-spin correlation function
+**************************************************************/
+void dynamicalcorrelations(double ** spins, int t, int N, double staggered){
+
+}
+
 /**************************************************************
 *
 * Projection to conserved manifold
