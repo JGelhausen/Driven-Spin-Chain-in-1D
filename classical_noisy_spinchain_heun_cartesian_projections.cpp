@@ -44,7 +44,8 @@
 int glob_maxit=0;
 
 // forward declaration of functions - list of all functions
-double dynamicalcorrelations(double ** spins, double k, double w, int N, int equilibrationtime, int arraysize, int stepsize);
+double dynamicalcorrelations(double ** spins, double k, double w, int N, int equilibrationtime, int arraysize, int numberoffreq);
+int calcfrequencydiscretisation(int arraysize, int equilibrationtime, int h, int ggt);
 void HeunMethod(double** spins, double* drift, double* driftpredict, double* noisevector, double* noisepredict,double noise, double h, int t, int L);
 void EulerMaruyamaPredictor(double** spins, double* driftvector,double* noisevector ,double h, double noise, int t, int L);
 void CalcDriftVector(double* driftvector, double* noisevector,double** Jakobi, double** spins,double h, int t, int N, int L, double J, double DeltaJ, double omegad, double lambda, double var, double noise,double* SpinChainNoise, double staggered, double J2, int cossin, double phi);
@@ -433,14 +434,17 @@ printf("finished everything\n");
             char filename10[1024];
             snprintf (filename10, sizeof (filename10), "dataAfinitial/dynamicalspinspin/dynamicspinspin_Heun=%i_init=%i_arsize=%i_N=%i_J=%.2lf_J2=%.2lf_DJ=%.3lf_od=%.3lf_lam=%.3lf_h=%.5lf_n=%.1lf_T=%3lf_stag=%.2lf_cossin=%i_phi=%.3lf.txt",Heun,init,arraysize,N,J,J2,DeltaJ,omegad,lambda,h,noise,T,staggered,cossin,phi);
 
+						int numberoffreq=calcfrequencydiscretisation(arraysize,equilibrationtime,h,60);
+						//int assocstepsize=(arraysize-equilibrationtime)/numberoffreq;
+
             FILE *fh10 = NULL;
             fh10 = fopen (filename10, "w");
-						for(int w=equilibrationtime;w<arraysize;w+=16*stepsize){
+						for(int w=0;w<numberoffreq;w++){
 							for(int k=0;k<N;k++){
 								// Output norm of spin 3 and all components of the spin
-								fprintf (fh10, "%.6lf\t%.6lf\t%.6lf\n",double((w-equilibrationtime)/(4*stepsize))*2.0*M_PI/(double(arraysize-equilibrationtime)/(4*stepsize)),double(k)*2.0*M_PI/double(N),dynamicalcorrelations(spins,double(k),0.0*double(((w-equilibrationtime)/(4*stepsize))),N,equilibrationtime,arraysize,4*stepsize));
+								fprintf (fh10, "%.6lf\t%.6lf\t%.6lf\n",double(w)*2.0*M_PI/double(numberoffreq),double(k)*2.0*M_PI/double(N),dynamicalcorrelations(spins,double(k),double(w),N,equilibrationtime,arraysize,numberoffreq));
 								}
-								std::cout << "w is " << (w-equilibrationtime)/(4*stepsize) << "out of " << (arraysize-equilibrationtime)/(4*stepsize) << std::endl;
+								std::cout << "w is " << w << "out of " << numberoffreq-1 << std::endl;
 						}
             fclose (fh10);
 //
@@ -940,7 +944,7 @@ int calcfrequencydiscretisation(int arraysize, int equilibrationtime, int h, int
 	while(n<2*ggt)
 	{
 		if(slots%n==0){
-			return n;  // has now the frequency discretisation
+			return n;  // has now the total number of discrete frequencies
 			// we have achieved now arraysize-equilibrationtime = n * (arraysize-equilibrationtime)/n; where both parts are integer
 			// n is the desired number of frequency discretisations  closest to the initially supplied integer ggt rand
 			// (arraysize-equilibrationtime)/n is the stepsize package as (arraysize-equilibrationtime)/n * h is the time interval used to evaluate the time signal
@@ -953,18 +957,21 @@ int calcfrequencydiscretisation(int arraysize, int equilibrationtime, int h, int
 	    std::exit( EXIT_FAILURE );
 		}
 	}
+	return 0;
 }
 /**************************************************************
 *
 * Calculate dynamical spin-spin correlation function
 **************************************************************/
 // k is an integer between 0 and #number of spins, w is an integer between 0 and arraysize-equilibrationtime
-double dynamicalcorrelations(double ** spins, double k, double w, int N, int equilibrationtime, int arraysize,int stepsize){
+double dynamicalcorrelations(double ** spins, double k, double w, int N, int equilibrationtime, int arraysize,int numberoffreq){
 double doubledynamiccorrel=0.0;
-double prew=2.0*M_PI/(double(arraysize-equilibrationtime)/stepsize);
+//double prew=2.0*M_PI/(double(arraysize-equilibrationtime)/stepsize);
+double prew=2.0*M_PI/(double(numberoffreq));
 double prek=2.0*M_PI/(double(N));
 double szzonej=0.0;
 double szzonep=0.0;
+int stepsize = (arraysize-equilibrationtime)/numberoffreq;
 
 for(int n=equilibrationtime;n<arraysize;n+=stepsize){ // time loop
 	for(int m=equilibrationtime;m<arraysize;m+=stepsize){ // time loop
